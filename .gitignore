@@ -1,0 +1,6 @@
+*.Rproj
+.Rhistory
+.Rbuildignore
+.Rproj.user/
+LICENSE.md
+miscellaneous/

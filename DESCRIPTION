@@ -1,0 +1,32 @@
+Package: simlite
+Type: Package
+Title: Simulation functions for sequencing count matrices based on common distributions
+Version: 0.1.0
+Author: Mukai Wang
+Maintainer: Mukai Wang <wangmk@umich.edu>
+Description: This package can be used to simulate high throughput sequencing counts based on common parametric distributions.
+    The distributions include Poisson, gamma, negative binomial and log normal distribution. Zero inflation can be introduced.
+    The user can also specify dependence structure between covariates with Gaussian copulas.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: false
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1.0)
+Imports:
+    MASS(>= 7.3.0),
+    Matrix(>= 1.7.0),
+    mvtnorm(>= 1.3.0),
+    phyloseq(>= 1.49.0),
+    SummarizedExperiment(>= 1.35.0),
+    stats(>= 4.4.0)
+Suggests: 
+    rmarkdown (>= 2.11),
+    knitr (>= 1.37),
+    testthat (>= 3.0.0)
+LinkingTo:
+    Rcpp,
+    RcppArmadillo,
+    RcppParallel
+VignetteBuilder: knitr
