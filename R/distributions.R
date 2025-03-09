@@ -119,7 +119,7 @@ ziloglnorm <- function(param, x){
 }
 
 
-#TODO: fit distribution function
+
 
 
 
@@ -138,7 +138,7 @@ ziloglnorm <- function(param, x){
 #' For log normal distribution, the name needs to be "mu" and "sigma". Zero inflated distributions need to have "pi0".
 #'
 #'
-#'@return a named vector with mean and variances
+#'@returns a named vector with mean and variances
 param2mom <- function(param, dist=c("pois", "gamma", "nb", "lnorm",
                                     "zipois", "zigamma", "zinb", "zilnorm")){
 
@@ -165,18 +165,17 @@ param2mom <- function(param, dist=c("pois", "gamma", "nb", "lnorm",
     }
   } else if (dist=="gamma" | dist == "zigamma"){
     stopifnot("shape" %in% names(param) & "scale" %in% names(param))
-    nzmeanval <- param["shape"] * param["scale"] |> unname()
-    nzvarval <- param["shape"] * (param["scale"]^2) |> unname()
+    nzmeanval <- unname(param["shape"] * param["scale"])
+    nzvarval <- unname(param["shape"] * (param["scale"]^2))
     if(dist == "zigamma"){
       stopifnot("pi0" %in% names(param))
       output <- zidist(pi0=param["pi0"], nzmean=nzmeanval, nzvar=nzvarval)
     } else{
       output <- c(m=nzmeanval, v=nzvarval)
     }
-    output <- c(m=meanval, v=varval)
   } else if (dist == "nb" | dist == "zinb"){
     stopifnot("mu" %in% names(param) & "size" %in% names(param))
-    nzmeanval <- param["mu"] |> unname()
+    nzmeanval <- unname(param["mu"])
     nzvarval <- unname(param["mu"] + (param["mu"]^2) / param["size"])
     if(dist == "zinb"){
       stopifnot("pi0" %in% names(param))
@@ -200,5 +199,61 @@ param2mom <- function(param, dist=c("pois", "gamma", "nb", "lnorm",
 }
 
 
+#' Convert mean and variances to parameters of a distribution
+#'@param moments a named vector with mean, variance and zero inflation probability
+#'@param dist distribution name, can be one of "pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm"
+#'@returns a named vector with the distribution parameters
+#'@details
+#' If the distribution does not have zero inflation components, the names in the vector are "m" and "v".
+#' Otherwise the names need to have "pi0", "mnz" and "vnz". Poisson distribution has mean parameter "lambda".
+#' Gamma distribution has two parameters "shape" and "scale". Negative binomial distribution has two parameters "mu" and "size".
+#' lognormal distribution has two parameters "mu" and "sigma"
+mom2param <- function(moments, dist=c("pois", "gamma", "nb", "lnorm",
+                                    "zipois", "zigamma", "zinb", "zilnorm")){
 
-# given quantiles, get distribution values
+  dist <- match.arg(dist)
+
+  if (grepl("zi", dist)){
+    stopifnot("pi0" %in% names(moments))
+    key_mean <- "mnz"
+    key_var <- "vnz"
+  } else{
+    key_mean <- "m"
+    key_var <- "v"
+  }
+
+
+  if (dist == "pois" | dist =="zipois"){
+    stopifnot(key_mean %in% names(moments) & key_var %in% names(moments))
+    params <- c(lambda=unname(moments[key_mean]))
+  } else if (dist == "gamma" | dist=="zigamma"){
+    stopifnot(key_mean %in% names(moments) & key_var %in% names(moments))
+    shape <- unname(moments[key_mean]^2 / moments[key_var])
+    scale <- unname(moments[key_var] / moments[key_mean])
+    params <- c(shape=shape, scale=scale)
+  } else if (dist == "nb" | dist == "zinb"){
+    stopifnot(key_mean %in% names(moments) & key_var %in% names(moments))
+    mu <- unname(moments[key_mean])
+    size <- unname(moments[key_mean]^2 / (moments[key_var] - moments[key_mean]))
+    params <- c(mu=mu, size=size)
+  } else if (dist == "lnorm" | dist == "zilnorm"){
+    stopifnot(key_mean %in% names(moments) & key_var %in% names(moments))
+    sigma2 <- unname(log(moments[key_var]/(moments[key_mean]^2)+1))
+    mu <- unname(log(moments[key_mean]) - sigma2/2)
+    params <- c(mu=mu, sigma=sqrt(sigma2))
+  }
+
+  if (grepl("zi", dist)){
+    params["pi0"] <- moments["pi0"]
+  }
+  return(params)
+}
+
+
+
+#TODO: fit distribution function
+
+
+#TODO: given quantiles, get distribution values
+
+

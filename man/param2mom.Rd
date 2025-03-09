@@ -21,3 +21,8 @@ a named vector with mean and variances
 \description{
 convert parameters to mean and variances for a given distribution
 }
+\details{
+For poisson distribution, the name need to be "lambda". For negative binomial distribution,
+the name need to be "mu" and "size". For gamma distribution,  the name needs to be "shape" and "scale".
+For log normal distribution, the name needs to be "mu" and "sigma". Zero inflated distributions need to have "pi0".
+}

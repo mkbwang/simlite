@@ -31,3 +31,4 @@ LinkingTo:
     RcppArmadillo,
     RcppParallel
 VignetteBuilder: knitr
+Config/testthat/edition: 3
