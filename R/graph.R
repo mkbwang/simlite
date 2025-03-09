@@ -62,3 +62,17 @@ prec_setup <- function(dimension, sparseness=0.1, cond=50,
 }
 
 
+
+#' Convert a precision matrix to a covariance/correlation matrix
+#'
+#' @param invsigma a precision matrix that is symmetric and positive definite
+#' @param corr logical, whether to return a correlation matrix
+prec2cov <- function(invsigma, corr=FALSE){
+
+  # use the fact that the matrix is positive definite
+  sigma <- chol2inv(chol(invsigma))
+  if (corr){
+    sigma <- cov2cor(sigma)
+  }
+  return(sigma)
+}

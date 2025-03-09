@@ -2,3 +2,7 @@
 
 export(graph_setup)
 importFrom(RSpectra,eigs_sym)
+importFrom(stats,dgamma)
+importFrom(stats,dlnorm)
+importFrom(stats,dnbinom)
+importFrom(stats,dpois)
