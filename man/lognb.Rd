@@ -7,7 +7,7 @@
 lognb(param, x)
 }
 \arguments{
-\item{param}{a named vector with two elements. One is the mean (mu) and the other is the size parameter (size)}
+\item{param}{a named vector with two elements. One is the mean (logmu) and the other is the size parameter (logsize)}
 
 \item{x}{vector of observed counts}
 }

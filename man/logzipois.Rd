@@ -7,7 +7,7 @@
 logzipois(param, x)
 }
 \arguments{
-\item{param}{a named vector two elements. One is the zero probability (pi0) and the other is the mean of nonzero part (lambda)}
+\item{param}{a named vector two elements. One is the zero probability (logitpi0) and the other is the mean of nonzero part (loglambda)}
 
 \item{x}{vector of observed counts}
 }

@@ -1,24 +1,33 @@
 
+
+expit <- function(y){
+  exp(y)/(1+exp(y))
+}
+
+logit <- function(y){
+  log(y / (1-y))
+}
+
 # log likelihoods
 
 #'sum of log likelihoods for a poisson distribution
-#'@param param a named vector with one element "lambda"
+#'@param param a named vector with one element "loglambda"
 #'@param x vector of observed counts
 #'@return sum of log likelihoods
 #'@importFrom stats dpois
 logpois <- function(param, x){
-  lambda <- param["lambda"]
+  lambda <- exp(param["loglambda"])
   return(sum(dpois(x, lambda, log=T)))
 }
 
 
 #'sum of log likelihoods for a zero inflated poisson distribution
-#'@param param a named vector two elements. One is the zero probability (pi0) and the other is the mean of nonzero part (lambda)
+#'@param param a named vector two elements. One is the zero probability (logitpi0) and the other is the mean of nonzero part (loglambda)
 #'@param x vector of observed counts
 #'@importFrom stats dpois
 logzipois <- function(param, x){
-  pi0 <- param["pi0"]
-  lambda <- param["lambda"]
+  pi0 <- expit(param["logitpi0"])
+  lambda <- exp(param["loglambda"])
 
   x_nonzero <- x[x>0]
   loglik_nonzero <- log((1-pi0)*dpois(x_nonzero, lambda)) |> sum()
@@ -29,27 +38,27 @@ logzipois <- function(param, x){
 }
 
 #'sum of log likelihoods for a gamma distribution
-#'@param param a named vector two elements. One is the shape parameter (alpha) and the other is the scale (beta)
+#'@param param a named vector two elements. One is the shape parameter (logalpha) and the other is the scale (logbeta)
 #'@param x vector of observed counts
 #'@importFrom stats dgamma
 loggamma <- function(param, x){
-  alpha <- param["shape"]
-  beta <- param["scale"]
+  alpha <- exp(param["logshape"])
+  beta <- exp(param["logscale"])
   return(sum(dgamma(x, shape=alpha, scale=beta, log=T)))
 }
 
 
 #'sum of log likelihoods for a zero inflated gamma distribution
-#'@param param a named vector with three elements. One is the zero probability pi0.
-#'The other two are shape parameter (alpha) and the other is the scale (beta)
+#'@param param a named vector with three elements. One is the zero probability logitpi0.
+#'The other two are shape parameter (logalpha) and the other is the scale (logbeta)
 #'@param x vector of observed counts
 #'@importFrom stats dgamma
 #'
 logzigamma <- function(param, x){
 
-  pi0 <- param['pi0']
-  alpha <- param['shape']
-  beta <- param['scale']
+  pi0 <- expit(param['logitpi0'])
+  alpha <- exp(param['logshape'])
+  beta <- exp(param['logscale'])
 
   x_nonzero <- x[x>0]
   loglik_nonzero <- log((1-pi0)*dgamma(x_nonzero, shape=alpha, scale=beta)) |> sum()
@@ -60,30 +69,30 @@ logzigamma <- function(param, x){
 
 
 #' sum of log likelihoods for negative binomial distribution
-#' @param param a named vector with two elements. One is the mean (mu) and the other is the size parameter (size)
+#' @param param a named vector with two elements. One is the mean (logmu) and the other is the size parameter (logsize)
 #' @param x vector of observed counts
 #' @importFrom stats dnbinom
 lognb <- function(param, x){
-  mu <- param["mu"]
-  size <- param["size"]
+  mu <- exp(param["logmu"])
+  size <- exp(param["logsize"])
   return(sum(dnbinom(x, mu=mu, size=size, log=T)))
 }
 
 
 #' sum of log likelihoods for zero inflated negative binomial distribution
-#' @param param a named vector with three elements. The first one is the zero probability (pi0).
-#' The other two are  the mean (mu) and the size parameter (size) of negative binomial distribution.
+#' @param param a named vector with three elements. The first one is the zero probability (logitpi0).
+#' The other two are  the mean (logmu) and the size parameter (logsize) of negative binomial distribution.
 #' @param x vector of observed counts
 #' @importFrom stats dnbinom
 logzinb <- function(param, x){
 
-  pi0 <- param["pi0"]
-  mu <- param["mu"]
-  size <- param["size"]
+  pi0 <- expit(param["logitpi0"])
+  mu <- exp(param["logmu"])
+  size <- exp(param["logsize"])
 
   x_nonzero <- x[x>0]
   loglik_nonzero <- log((1-pi0)*dnbinom(x_nonzero, mu=mu, size=size)) |> sum()
-  loglik_zero <- sum(x==0) * log(pi0 + (1-pi0)*dbinom(0, mu=mu, size=size))
+  loglik_zero <- sum(x==0) * log(pi0 + (1-pi0)*dnbinom(0, mu=mu, size=size))
 
   return(loglik_nonzero + loglik_zero)
 
@@ -91,12 +100,12 @@ logzinb <- function(param, x){
 
 
 #' sum of log likelihoods for log normal distribution
-#' @param param a named vector with three elements. The first one is the meanlog (mu) and the other is the sdlog (sigma)
+#' @param param a named vector with three elements. The first one is the meanlog (logmu) and the other is the sdlog (logsigma)
 #' @param x vector of observed counts
 #' @importFrom stats dlnorm
 loglnorm <- function(param, x){
-  mu <- param["mu"]
-  sigma <- param["sigma"]
+  mu <- exp(param["logmu"])
+  sigma <- exp(param["logsigma"])
   return(sum(dlnorm(x, meanlog=mu, sdlog=sigma, log=T)))
 }
 
@@ -105,10 +114,10 @@ loglnorm <- function(param, x){
 #' @param param a named vector with three elements. The first one is the meanlog (mu) and the other is the sdlog (sigma)
 #' @param x vector of observed counts
 #' @importFrom stats dlnorm
-ziloglnorm <- function(param, x){
-  pi0 <- param["pi0"]
-  mu <- param["mu"]
-  sigma <- param["sigma"]
+logzilnorm <- function(param, x){
+  pi0 <- expit(param["logitpi0"])
+  mu <- exp(param["logmu"])
+  sigma <- exp(param["logsigma"])
 
   x_nonzero <- x[x>0]
   loglik_nonzero <- log((1-pi0)*dlnorm(x_nonzero, meanlog=mu, sdlog=sigma)) |> sum()
@@ -251,7 +260,115 @@ mom2param <- function(moments, dist=c("pois", "gamma", "nb", "lnorm",
 
 
 
-#TODO: fit distribution function
+#' Given a vector of counts, fit a distribution
+#'@param x vector of observed values
+#'@param dist distribution. Can be chosen from pois, gamma, nb, lnorm, zipois, zigamma, zinb and zilnorm
+#'@importFrom stats optim var
+fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
+                               "zipois", "zigamma", "zinb", "zilnorm")){
+
+  dist <- match.arg(dist)
+  control = list(fnscale = -1)
+
+  # set up initial parameters
+  if(grepl("zi", dist)){
+    observed_pi0 <- mean(x == 0)*0.5
+    observed_mnz <- sum(x) / (length(x) - 0.5*sum(x==0))
+    observed_vnz <- var(x)
+    observed_mom <- c(pi0=observed_pi0, mnz=observed_mnz, vnz=observed_vnz)
+  } else{
+    observed_m <- mean(x)
+    observed_v <- var(x)
+    observed_mom <- c(m=observed_m, v=observed_v)
+  }
+
+  if (dist == "pois"){
+    observed_param <- mom2param(observed_mom, dist="pois")
+    t_observed_param <- log(observed_param["lambda"])
+    names(t_observed_param) <- "loglambda"
+    result <- optim(par=t_observed_param, fn=logpois, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(exp(fitted_param["loglambda"]))
+    names(fitted_param) <- "lambda"
+  } else if (dist == "zipois") {
+    observed_param <- mom2param(observed_mom, dist="zipois")
+    logit_pi0 <- max(logit(observed_param["pi0"]), -20)
+    log_lambda <- log(observed_param["lambda"])
+    t_observed_param <- c(logit_pi0, log_lambda)
+    names(t_observed_param) <- c("logitpi0", "loglambda")
+    result <- optim(par=t_observed_param, fn=logzipois, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(expit(fitted_param["logitpi0"]), exp(fitted_param["loglambda"]))
+    names(fitted_param) <- c("pi0", "lambda")
+  } else if (dist == "gamma"){
+    stopifnot("Data points contain zeros, but Gamma distribution does not allow zeros." = (sum(x <= 0) == 0))
+    observed_param <- mom2param(observed_mom, dist="gamma")
+    log_shape <- log(observed_param["shape"])
+    log_scale <- log(observed_param["scale"])
+    t_observed_param <- c(log_shape, log_scale)
+    names(t_observed_param) <- c("logshape", "logscale")
+    result <- optim(par=t_observed_param, fn=loggamma, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(exp(fitted_param["logshape"]), exp(fitted_param["logscale"]))
+    names(fitted_param) <- c("shape", "scale")
+  } else if (dist == "zigamma"){
+    observed_param <- mom2param(observed_mom, dist="zigamma")
+    logit_pi0 <- max(logit(observed_param["pi0"]), -20)
+    log_shape <- log(observed_param["shape"])
+    log_scale <- log(observed_param["scale"])
+    t_observed_param <- c(logit_pi0, log_shape, log_scale)
+    names(t_observed_param) <- c("logitpi0", "logshape", "logscale")
+    result <- optim(par=t_observed_param, fn=logzigamma, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(expit(fitted_param["logitpi0"]), exp(fitted_param["logshape"]), exp(fitted_param["logscale"]))
+    names(fitted_param) <- c("pi0", "shape", "scale")
+  } else if (dist == "nb"){
+    observed_param <- mom2param(observed_mom, dist="nb")
+    log_mu <- log(observed_param["mu"])
+    log_size <- log(observed_param["size"])
+    t_observed_param <- c(log_mu, log_size)
+    names(t_observed_param) <- c("logmu", "logsize")
+    result <- optim(par=t_observed_param, fn=lognb, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(exp(fitted_param["logmu"]), exp(fitted_param["logsize"]))
+    names(fitted_param) <- c("mu", "size")
+  } else if (dist == "zinb"){
+    observed_param <- mom2param(observed_mom, dist="zinb")
+    logit_pi0 <- max(logit(observed_param["pi0"]), -20)
+    log_mu <- log(observed_param["mu"])
+    log_size <- log(observed_param["size"])
+    t_observed_param <- c(logit_pi0, log_mu, log_size)
+    names(t_observed_param) <- c("logitpi0", "logmu", "logsize")
+    result <- optim(par=t_observed_param, fn=logzinb, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(expit(fitted_param["logitpi0"]), exp(fitted_param["logmu"]), exp(fitted_param["logsize"]))
+    names(fitted_param) <- c("pi0", "mu", "size")
+  } else if (dist == "lnorm"){
+    stopifnot("Data points contain zeros, but lognormal distribution does not allow zeros." = (sum(x <= 0) == 0))
+    observed_param <- mom2param(observed_mom, dist="lnorm")
+    log_mu <- log(observed_param["mu"])
+    log_sigma <- log(observed_param["sigma"])
+    t_observed_param <- c(log_mu, log_sigma)
+    names(t_observed_param) <- c("logmu", "logsigma")
+    result <- optim(par=t_observed_param, fn=loglnorm, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(exp(fitted_param["logmu"]), exp(fitted_param["logsigma"]))
+    names(fitted_param) <- c("mu", "sigma")
+  } else if (dist == "zilnorm"){
+    observed_param <- mom2param(observed_mom, dist="zilnorm")
+    logit_pi0 <- max(logit(observed_param["pi0"]), -20)
+    log_mu <- log(observed_param["mu"])
+    log_sigma <- log(observed_param["sigma"])
+    t_observed_param <- c(logit_pi0, log_mu, log_sigma)
+    names(t_observed_param) <- c("logitpi0", "logmu", "logsigma")
+    result <- optim(par=t_observed_param, fn=logzilnorm, x=x, control=control, method="BFGS")
+    fitted_param <- result$par
+    fitted_param <- c(expit(fitted_param["logitpi0"]), exp(fitted_param["logmu"]), exp(fitted_param["logsigma"]))
+    names(fitted_param) <- c("pi0", "mu", "sigma")
+  }
+
+  return(fitted_param)
+}
 
 
 #TODO: given quantiles, get distribution values

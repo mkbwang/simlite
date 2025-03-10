@@ -88,3 +88,114 @@ test_that("Zero inflated Log Normal", {
 
 })
 
+
+test_that("Fit Poisson", {
+  set.seed(2025)
+  nsample <- 400
+  lambda <- 89
+  counts <- rpois(n=nsample, lambda=lambda)
+  fitted_params <- fitdistr(x=counts, dist="pois")
+  expect_equal(unname(fitted_params["lambda"]), lambda, tolerance=0.1)
+})
+
+
+test_that("Fit Zero Inflated Poisson", {
+  set.seed(2025)
+  nsample <- 400
+  pi0 <- 0.2
+  lambda <- 2
+  counts <- rbinom(n=nsample, size=1, prob=1-pi0)
+  counts <- counts * rpois(n=nsample, lambda=lambda)
+  fitted_params <- fitdistr(x=counts, dist="zipois")
+  expect_equal(unname(fitted_params["pi0"]), pi0, tolerance=0.2)
+  expect_equal(unname(fitted_params["lambda"]), lambda, tolerance=0.2)
+
+})
+
+test_that("Fit Gamma", {
+  set.seed(2025)
+  nsample <- 400
+  shape <- 3
+  scale <- 0.6
+  counts <- rgamma(n=nsample, shape=shape, scale=scale)
+  fitted_params <- fitdistr(x=counts, dist="gamma")
+  expect_equal(unname(fitted_params["shape"]), shape, tolerance=0.1)
+  expect_equal(unname(fitted_params["scale"]), scale, tolerance=0.2)
+})
+
+test_that("Fit Zero Inflated Gamma", {
+  set.seed(2025)
+  nsample <- 400
+  pi0 <- 0.2
+  shape <- 3
+  scale <- 0.6
+  counts <- rbinom(n=nsample, size=1, prob=1-pi0)
+  counts <- counts * rgamma(n=nsample, shape=shape, scale=scale)
+  fitted_params <- fitdistr(x=counts, dist="zigamma")
+  expect_equal(unname(fitted_params["pi0"]), pi0, tolerance=0.2)
+  expect_equal(unname(fitted_params["shape"]), shape, tolerance=0.2)
+  expect_equal(unname(fitted_params["scale"]), scale, tolerance=0.2)
+})
+
+
+test_that("Fit Negative Binomial", {
+
+  set.seed(2025)
+  nsample <- 400
+  mu <- 20
+  size <- 1.5
+  counts <- rnbinom(n=nsample, size=size, mu=mu)
+  fitted_params <- fitdistr(x=counts, dist="nb")
+  expect_equal(unname(fitted_params["mu"]), mu, tolerance=0.1)
+  expect_equal(unname(fitted_params["size"]), size, tolerance=0.2)
+
+})
+
+
+test_that("Fit Zero Inflated Negative Binomial", {
+
+  set.seed(2024)
+  nsample <- 400
+  pi0 <- 0.2
+  mu <- 4
+  size <- 1
+  counts <- rbinom(n=nsample, size=1, prob=1-pi0)
+  counts <- counts * rnbinom(n=nsample, size=size, mu=mu)
+  fitted_params <- fitdistr(x=counts, dist="zinb")
+  expect_equal(unname(fitted_params["pi0"]), pi0, tolerance=0.2)
+  expect_equal(unname(fitted_params["mu"]), mu, tolerance=0.2)
+  expect_equal(unname(fitted_params["size"]), size, tolerance=0.3)
+
+})
+
+
+test_that("Fit log normal", {
+
+  set.seed(2024)
+  nsample <- 400
+  mu <- 4
+  sigma <- 0.2
+  counts <- rlnorm(n=nsample, meanlog=mu, sdlog=sigma)
+  fitted_params <- fitdistr(x=counts, dist="lnorm")
+  expect_equal(unname(fitted_params["mu"]), mu, tolerance=0.2)
+  expect_equal(unname(fitted_params["sigma"]), sigma, tolerance=0.1)
+
+})
+
+
+
+test_that("Fit zero inflated log normal", {
+
+  set.seed(2025)
+  nsample <- 400
+  pi0 <- 0.2
+  mu <- 1.5
+  sigma <- 0.2
+  counts <- rbinom(n=nsample, size=1, prob=1-pi0)
+  counts <- counts * rlnorm(n=nsample, meanlog=mu, sdlog=sigma)
+  fitted_params <- fitdistr(x=counts, dist="zilnorm")
+  expect_equal(unname(fitted_params["pi0"]), pi0, tolerance=0.2)
+  expect_equal(unname(fitted_params["mu"]), mu, tolerance=0.1)
+  expect_equal(unname(fitted_params["sigma"]), sigma, tolerance=0.2)
+
+})

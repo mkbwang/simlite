@@ -7,7 +7,7 @@
 logpois(param, x)
 }
 \arguments{
-\item{param}{a named vector with one element "lambda"}
+\item{param}{a named vector with one element "loglambda"}
 
 \item{x}{vector of observed counts}
 }

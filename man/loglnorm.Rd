@@ -7,7 +7,7 @@
 loglnorm(param, x)
 }
 \arguments{
-\item{param}{a named vector with three elements. The first one is the meanlog (mu) and the other is the sdlog (sigma)}
+\item{param}{a named vector with three elements. The first one is the meanlog (logmu) and the other is the sdlog (logsigma)}
 
 \item{x}{vector of observed counts}
 }

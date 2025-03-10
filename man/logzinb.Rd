@@ -7,8 +7,8 @@
 logzinb(param, x)
 }
 \arguments{
-\item{param}{a named vector with three elements. The first one is the zero probability (pi0).
-The other two are  the mean (mu) and the size parameter (size) of negative binomial distribution.}
+\item{param}{a named vector with three elements. The first one is the zero probability (logitpi0).
+The other two are  the mean (logmu) and the size parameter (logsize) of negative binomial distribution.}
 
 \item{x}{vector of observed counts}
 }

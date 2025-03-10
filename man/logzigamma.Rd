@@ -7,8 +7,8 @@
 logzigamma(param, x)
 }
 \arguments{
-\item{param}{a named vector with three elements. One is the zero probability pi0.
-The other two are shape parameter (alpha) and the other is the scale (beta)}
+\item{param}{a named vector with three elements. One is the zero probability logitpi0.
+The other two are shape parameter (logalpha) and the other is the scale (logbeta)}
 
 \item{x}{vector of observed counts}
 }

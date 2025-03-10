@@ -7,7 +7,7 @@
 loggamma(param, x)
 }
 \arguments{
-\item{param}{a named vector two elements. One is the shape parameter (alpha) and the other is the scale (beta)}
+\item{param}{a named vector two elements. One is the shape parameter (logalpha) and the other is the scale (logbeta)}
 
 \item{x}{vector of observed counts}
 }
