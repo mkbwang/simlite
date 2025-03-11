@@ -371,6 +371,18 @@ fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
 }
 
 
-#TODO: given quantiles, get distribution values
+
+#' fit distributions to multiple features in a count matrix at the same time
+#'
+#' @param count_mat nsamples*nfeatures
+#' @param dist distribution name among "pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm"
+fitdistr_mat <- function(count_mat, dist=c("pois", "gamma", "nb", "lnorm",
+                                           "zipois", "zigamma", "zinb", "zilnorm")){
+
+  dist <- match.arg(dist)
+  params <- mapply(fitdistr, asplit(sample_counts, 1), MoreArgs=list(dist=dist))
+  return(params)
+
+}
 
 

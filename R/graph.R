@@ -76,3 +76,7 @@ prec2cov <- function(invsigma, corr=FALSE){
   }
   return(sigma)
 }
+
+
+
+
