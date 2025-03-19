@@ -30,7 +30,7 @@ logzipois <- function(param, x){
   lambda <- exp(param["loglambda"])
 
   x_nonzero <- x[x>0]
-  loglik_nonzero <- log((1-pi0)*dpois(x_nonzero, lambda)) |> sum()
+  loglik_nonzero <- sum(log(1-pi0)+dpois(x_nonzero, lambda, log=T))
   loglik_zero <- sum(x==0) * log(pi0 + (1-pi0)*dpois(0, lambda))
 
   return(loglik_nonzero + loglik_zero)
@@ -61,7 +61,7 @@ logzigamma <- function(param, x){
   beta <- exp(param['logscale'])
 
   x_nonzero <- x[x>0]
-  loglik_nonzero <- log((1-pi0)*dgamma(x_nonzero, shape=alpha, scale=beta)) |> sum()
+  loglik_nonzero <- sum(log(1-pi0)+dgamma(x_nonzero, shape=alpha, scale=beta, log=T))
   loglik_zero <- sum(x==0) * log(pi0)
 
   return(loglik_nonzero + loglik_zero)
@@ -91,7 +91,7 @@ logzinb <- function(param, x){
   size <- exp(param["logsize"])
 
   x_nonzero <- x[x>0]
-  loglik_nonzero <- log((1-pi0)*dnbinom(x_nonzero, mu=mu, size=size)) |> sum()
+  loglik_nonzero <- sum(log(1-pi0)+dnbinom(x_nonzero, mu=mu, size=size, log=T))
   loglik_zero <- sum(x==0) * log(pi0 + (1-pi0)*dnbinom(0, mu=mu, size=size))
 
   return(loglik_nonzero + loglik_zero)
@@ -104,7 +104,7 @@ logzinb <- function(param, x){
 #' @param x vector of observed counts
 #' @importFrom stats dlnorm
 loglnorm <- function(param, x){
-  mu <- exp(param["logmu"])
+  mu <- param["mu"]
   sigma <- exp(param["logsigma"])
   return(sum(dlnorm(x, meanlog=mu, sdlog=sigma, log=T)))
 }
@@ -116,11 +116,11 @@ loglnorm <- function(param, x){
 #' @importFrom stats dlnorm
 logzilnorm <- function(param, x){
   pi0 <- expit(param["logitpi0"])
-  mu <- exp(param["logmu"])
+  mu <- param["mu"]
   sigma <- exp(param["logsigma"])
 
   x_nonzero <- x[x>0]
-  loglik_nonzero <- log((1-pi0)*dlnorm(x_nonzero, meanlog=mu, sdlog=sigma)) |> sum()
+  loglik_nonzero <- sum(log(1-pi0)+dlnorm(x_nonzero, meanlog=mu, sdlog=sigma, log=T))
   loglik_zero <- sum(x==0) * log(pi0)
 
   return(loglik_nonzero + loglik_zero)
@@ -148,11 +148,12 @@ logzilnorm <- function(param, x){
 #'
 #'
 #'@returns a named vector with mean and variances
+#'@export
 param2mom <- function(param, dist=c("pois", "gamma", "nb", "lnorm",
                                     "zipois", "zigamma", "zinb", "zilnorm")){
 
   dist <- match.arg(dist)
-  # helpter function for calculating mean and variance when zero inflation involved
+  # helper function for calculating mean and variance when zero inflation involved
   zidist <- function(pi0, nzmean, nzvar){
     output <- c(pi0=unname(pi0), mnz=unname(nzmean), vnz=unname(nzvar))
     meanval <- (1-pi0)*nzmean
@@ -217,6 +218,7 @@ param2mom <- function(param, dist=c("pois", "gamma", "nb", "lnorm",
 #' Otherwise the names need to have "pi0", "mnz" and "vnz". Poisson distribution has mean parameter "lambda".
 #' Gamma distribution has two parameters "shape" and "scale". Negative binomial distribution has two parameters "mu" and "size".
 #' lognormal distribution has two parameters "mu" and "sigma"
+#'@export
 mom2param <- function(moments, dist=c("pois", "gamma", "nb", "lnorm",
                                     "zipois", "zigamma", "zinb", "zilnorm")){
 
@@ -244,6 +246,8 @@ mom2param <- function(moments, dist=c("pois", "gamma", "nb", "lnorm",
     stopifnot(key_mean %in% names(moments) & key_var %in% names(moments))
     mu <- unname(moments[key_mean])
     size <- unname(moments[key_mean]^2 / (moments[key_var] - moments[key_mean]))
+    # just in case variance is smaller than mean
+    if (size < 0) size <- 100
     params <- c(mu=mu, size=size)
   } else if (dist == "lnorm" | dist == "zilnorm"){
     stopifnot(key_mean %in% names(moments) & key_var %in% names(moments))
@@ -263,9 +267,16 @@ mom2param <- function(moments, dist=c("pois", "gamma", "nb", "lnorm",
 #' Given a vector of counts, fit a distribution
 #'@param x vector of observed values
 #'@param dist distribution. Can be chosen from pois, gamma, nb, lnorm, zipois, zigamma, zinb and zilnorm
+#'@param cutoff values larger than certain quantile are excluded from fitting the model, default 97%
 #'@importFrom stats optim var
+#'@export
 fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
-                               "zipois", "zigamma", "zinb", "zilnorm")){
+                               "zipois", "zigamma", "zinb", "zilnorm"),
+                     cutoff=0.97){
+
+  # remove extremely large values
+  cutoff_value <- quantile(x, cutoff)
+  x <- x[x <= cutoff_value]
 
   dist <- match.arg(dist)
   control = list(fnscale = -1)
@@ -326,7 +337,7 @@ fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
     observed_param <- mom2param(observed_mom, dist="nb")
     log_mu <- log(observed_param["mu"])
     log_size <- log(observed_param["size"])
-    t_observed_param <- c(log_mu, log_size)
+    t_observed_param <- c(mu, log_size)
     names(t_observed_param) <- c("logmu", "logsize")
     result <- optim(par=t_observed_param, fn=lognb, x=x, control=control, method="BFGS")
     fitted_param <- result$par
@@ -346,24 +357,24 @@ fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
   } else if (dist == "lnorm"){
     stopifnot("Data points contain zeros, but lognormal distribution does not allow zeros." = (sum(x <= 0) == 0))
     observed_param <- mom2param(observed_mom, dist="lnorm")
-    log_mu <- log(observed_param["mu"])
+    # log_mu <- log(observed_param["mu"])
     log_sigma <- log(observed_param["sigma"])
-    t_observed_param <- c(log_mu, log_sigma)
-    names(t_observed_param) <- c("logmu", "logsigma")
+    t_observed_param <- c(observed_param["mu"], log_sigma)
+    names(t_observed_param) <- c("mu", "logsigma")
     result <- optim(par=t_observed_param, fn=loglnorm, x=x, control=control, method="BFGS")
     fitted_param <- result$par
-    fitted_param <- c(exp(fitted_param["logmu"]), exp(fitted_param["logsigma"]))
+    fitted_param <- c(fitted_param["mu"], exp(fitted_param["logsigma"]))
     names(fitted_param) <- c("mu", "sigma")
   } else if (dist == "zilnorm"){
     observed_param <- mom2param(observed_mom, dist="zilnorm")
     logit_pi0 <- max(logit(observed_param["pi0"]), -20)
-    log_mu <- log(observed_param["mu"])
+    # log_mu <- log(observed_param["mu"])
     log_sigma <- log(observed_param["sigma"])
-    t_observed_param <- c(logit_pi0, log_mu, log_sigma)
-    names(t_observed_param) <- c("logitpi0", "logmu", "logsigma")
+    t_observed_param <- c(logit_pi0, observed_param["mu"], log_sigma)
+    names(t_observed_param) <- c("logitpi0", "mu", "logsigma")
     result <- optim(par=t_observed_param, fn=logzilnorm, x=x, control=control, method="BFGS")
     fitted_param <- result$par
-    fitted_param <- c(expit(fitted_param["logitpi0"]), exp(fitted_param["logmu"]), exp(fitted_param["logsigma"]))
+    fitted_param <- c(expit(fitted_param["logitpi0"]), fitted_param["mu"], exp(fitted_param["logsigma"]))
     names(fitted_param) <- c("pi0", "mu", "sigma")
   }
 
@@ -374,13 +385,34 @@ fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
 
 #' fit distributions to multiple features in a count matrix at the same time
 #'
-#' @param count_mat nsamples*nfeatures
+#' @param count_mat nfeatures*nsamples
 #' @param dist distribution name among "pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm"
+#' @param cutoff values larger than certain quantile are excluded from fitting the model, default 97%
+#' @importFrom parallel detectCores makeCluster stopCluster clusterExport
+#' @importFrom doParallel registerDoParallel
+#' @importFrom foreach foreach %dopar%
+#' @export
 fitdistr_mat <- function(count_mat, dist=c("pois", "gamma", "nb", "lnorm",
-                                           "zipois", "zigamma", "zinb", "zilnorm")){
+                                           "zipois", "zigamma", "zinb", "zilnorm"),
+                         cutoff=0.97){
 
   dist <- match.arg(dist)
-  params <- mapply(fitdistr, asplit(sample_counts, 1), MoreArgs=list(dist=dist))
+  nfeatures <- nrow(count_mat)
+  numCores <- detectCores() - 1
+  cl <- makeCluster(numCores)
+  registerDoParallel(cl)
+  i <- 1
+
+  clusterExport(cl, varlist=c("fitdistr", "mom2param", "logpois",
+                              "logzipois", "loggamma", "logzigamma", "lognb",
+                              "logzinb", "loglnorm", "logzilnorm", "expit", "logit"))
+
+  params <- foreach(i=1:nfeatures, .combine=rbind) %dopar%{
+    fitted_param <- fitdistr(count_mat[i, ], dist=dist, cutoff=cutoff)
+    fitted_param
+  }
+
+  stopCluster(cl)
   return(params)
 
 }

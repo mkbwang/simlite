@@ -1,0 +1,143 @@
+---
+title: "Simulate Synthetic Count Data"
+author: "Mukai Wang"
+date: "2025-03-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message=FALSE, echo=T) 
+```
+
+
+In this vignette I will demonstrate how to fit four distributions (poisson, negative binomial, Gamma and log normal) with or without zero inflation.
+
+# Load example data
+
+First load the example data from [Ascinar etal](https://doi.org/10.1038/s41591-020-01183-8). This `SummarizedExperiment` object includes 1098 gut microbiome samples. We extract out the count matrix. Note that the rows are features and the columns are samples. I already filtered out features whose prevalence is smaller than 20%.
+
+
+```{r}
+library(SummarizedExperiment)
+data(gut_experiment_subset)
+count_data <- assay(gut_experiment_subset)
+```
+
+
+We normalize the count matrix so that the library size is the same for all the samples
+
+```{r}
+depths <- colSums(count_data)
+min_depth <- min(depths)
+normalization_factor <- min_depth / t(replicate(nrow(count_data), depths))
+count_data_normalized <- count_data * normalization_factor
+```
+
+
+There are many rare features which makes fitting distributions difficult. Let me focus on features which are observed in at least 50% of samples.
+
+
+```{r}
+count_data_normalized <- round(count_data_normalized)
+prevalences <- rowMeans(count_data_normalized > 0)
+subset_features <- which(prevalences > 0.5)
+count_data_subset <- count_data_normalized[subset_features, ]
+```
+
+
+# Fit Distributions
+
+Fit Poisson distribution.
+
+```{r}
+pois_params <- fitdistr_mat(count_mat=count_data_subset, dist="pois", cutoff=0.97)
+head(pois_params)
+```
+Fit zero-inflated Poisson distribution.
+
+
+```{r}
+zipois_params <- fitdistr_mat(count_mat=count_data_subset, dist="zipois", cutoff=0.97)
+head(zipois_params)
+```
+
+Fit negative binomial distribution.
+
+```{r}
+nb_params <- fitdistr_mat(count_mat=count_data_subset, dist="nb", cutoff=0.97)
+head(nb_params)
+```
+
+
+
+Fit zero inflated negative binomial 
+
+
+```{r}
+zinb_params <- fitdistr_mat(count_mat=count_data_subset, dist="zinb", cutoff=0.97)
+head(zinb_params)
+```
+
+Fit zero-inflated Gamma distribution.
+
+
+```{r}
+zigamma_params <- fitdistr_mat(count_mat=count_data_subset, dist="zigamma", cutoff=0.97)
+head(zigamma_params)
+```
+
+
+Fit zero-inflated lognormal distributions.
+
+
+```{r}
+zilnorm_params <- fitdistr_mat(count_mat=count_data_subset, dist="zilnorm", cutoff=0.97)
+head(zilnorm_params)
+```
+
+
+
+
+# Simulate Counts
+
+
+For now I just illustrate simulations where features are not correlated. First generate a copula with the expected number of samples and number of features.
+
+```{r}
+
+nsample <- 30
+nfeature <- 60
+copula <- gausscopula(n=nsample, Sigma=diag(nrow=nfeature))
+pois_counts <- simcountmat(copula=copula, params=pois_params[1:nfeature, ,drop=F],
+                           dist="pois")
+
+```
+
+
+
+```{r}
+
+zipois_counts <- simcountmat(copula=copula, params=zipois_params[1:nfeature, ,drop=F],
+                           dist="zipois")
+
+nb_counts <- simcountmat(copula=copula, params=nb_params[1:nfeature, ,drop=F],
+                           dist="nb")
+
+zinb_counts <- simcountmat(copula=copula, params=zinb_params[1:nfeature, ,drop=F],
+                           dist="zinb")
+
+```
+
+
+
+```{r}
+
+zigamma_counts <- simcountmat(copula=copula, params=zigamma_params[1:nfeature, ,drop=F],
+                           dist="zigamma")
+
+zilnorm_counts <- simcountmat(copula=copula, params=zilnorm_params[1:nfeature, ,drop=F],
+                           dist="zilnorm")
+
+```
+
+

@@ -6,13 +6,16 @@
 \usage{
 fitdistr(
   x,
-  dist = c("pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm")
+  dist = c("pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm"),
+  cutoff = 0.97
 )
 }
 \arguments{
 \item{x}{vector of observed values}
 
 \item{dist}{distribution. Can be chosen from pois, gamma, nb, lnorm, zipois, zigamma, zinb and zilnorm}
+
+\item{cutoff}{values larger than certain quantile are excluded from fitting the model, default 97\%}
 }
 \description{
 Given a vector of counts, fit a distribution

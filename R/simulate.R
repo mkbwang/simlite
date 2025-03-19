@@ -6,12 +6,13 @@
 #' @param mu mean vector, by default zero
 #' @param Sigma covariance matrix whose diagonals are ones. Be default identity matrix
 #' @importFrom MASS mvrnorm
+#' @importFrom stats pnorm
 gausscopula <- function(n=10, Sigma=diag(nrow=20)){
 
   stopifnot(all(diag(Sigma) == 1))
   gaussrv <- mvrnorm(n=n, mu=rep(0, nrow(Sigma)), Sigma=Sigma)
   cdf <- pnorm(gaussrv)
-  return(cdf)
+  return(t(cdf))
 
 }
 
@@ -59,12 +60,30 @@ simcount <- function(q, param, dist=c("pois", "gamma", "nb", "lnorm",
 #' @param copula a matrix of quantile values, nsample * nfeature
 #' @param params distribution parameters for each feature
 #' @param dist distributions
+#' @importFrom parallel detectCores makeCluster stopCluster clusterExport
+#' @importFrom doParallel registerDoParallel
+#' @importFrom foreach foreach %dopar%
+#' @export
 simcountmat <- function(copula, params, dist=c("pois", "gamma", "nb", "lnorm",
                                                "zipois", "zigamma", "zinb", "zilnorm")){
 
-  simulated_counts <- mapply(simcount, asplit(copula, 2), asplit(params, 2),
-                             MoreArgs=list(dist=dist))
+  nfeatures <- nrow(copula)
+  numCores <- detectCores() - 1
+  cl <- makeCluster(numCores)
+  registerDoParallel(cl)
+  i <- 1
 
+  paramnames <- colnames(params)
+  clusterExport(cl, varlist=c("simcount"))
+
+  simulated_counts <- foreach(i=1:nfeatures, .combine=rbind) %dopar%{
+    selected_param <- params[i, ]
+    names(selected_param) <- paramnames
+    simulated_count <- simcount(copula[i, ], param=selected_param, dist=dist)
+    simulated_count
+  }
+
+  stopCluster(cl)
   return(simulated_counts)
 
 }

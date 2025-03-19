@@ -21,7 +21,10 @@ Imports:
     phyloseq(>= 1.49.0),
     SummarizedExperiment(>= 1.35.0),
     stats(>= 4.4.0),
-    RSpectra(>= 0.16.0)
+    RSpectra(>= 0.16.0),
+    doParallel(>= 1.0.0),
+    foreach(>= 1.5.2),
+    parallel
 Suggests: 
     rmarkdown (>= 2.11),
     knitr (>= 1.37),
