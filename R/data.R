@@ -6,5 +6,4 @@
 #'
 #'@source <https://doi.org/10.1038/s41591-020-01183-8>
 #'
-#'
 "gut_experiment_subset"

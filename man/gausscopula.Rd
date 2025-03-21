@@ -10,8 +10,6 @@ gausscopula(n = 10, Sigma = diag(nrow = 20))
 \item{n}{sample size}
 
 \item{Sigma}{covariance matrix whose diagonals are ones. Be default identity matrix}
-
-\item{mu}{mean vector, by default zero}
 }
 \description{
 simulate from multivariate normal distributions

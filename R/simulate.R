@@ -3,10 +3,10 @@
 #' simulate from multivariate normal distributions
 #'
 #' @param n sample size
-#' @param mu mean vector, by default zero
 #' @param Sigma covariance matrix whose diagonals are ones. Be default identity matrix
 #' @importFrom MASS mvrnorm
 #' @importFrom stats pnorm
+#' @export
 gausscopula <- function(n=10, Sigma=diag(nrow=20)){
 
   stopifnot(all(diag(Sigma) == 1))
@@ -23,6 +23,7 @@ gausscopula <- function(n=10, Sigma=diag(nrow=20)){
 #' @param param distribution parameters. A named vector
 #' @param dist distribution name. Choose between "pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm"
 #' @importFrom stats qpois qgamma qnbinom qlnorm
+#' @export
 simcount <- function(q, param, dist=c("pois", "gamma", "nb", "lnorm",
                                        "zipois", "zigamma", "zinb", "zilnorm")){
 
@@ -60,15 +61,18 @@ simcount <- function(q, param, dist=c("pois", "gamma", "nb", "lnorm",
 #' @param copula a matrix of quantile values, nsample * nfeature
 #' @param params distribution parameters for each feature
 #' @param dist distributions
+#' @param ncores number of cores for parallel processing, by default 1
 #' @importFrom parallel detectCores makeCluster stopCluster clusterExport
 #' @importFrom doParallel registerDoParallel
+#' @importFrom parallelly availableCores
 #' @importFrom foreach foreach %dopar%
 #' @export
 simcountmat <- function(copula, params, dist=c("pois", "gamma", "nb", "lnorm",
-                                               "zipois", "zigamma", "zinb", "zilnorm")){
+                                               "zipois", "zigamma", "zinb", "zilnorm"),
+                        ncores=1){
 
   nfeatures <- nrow(copula)
-  numCores <- detectCores() - 1
+  numCores <- min(availableCores(), ncores)
   cl <- makeCluster(numCores)
   registerDoParallel(cl)
   i <- 1

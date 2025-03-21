@@ -7,7 +7,8 @@
 simcountmat(
   copula,
   params,
-  dist = c("pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm")
+  dist = c("pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm"),
+  ncores = 1
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ simcountmat(
 \item{params}{distribution parameters for each feature}
 
 \item{dist}{distributions}
+
+\item{ncores}{number of cores for parallel processing, by default 1}
 }
 \description{
 simulate count matrix given the quantiles and the distribution type and parameters.

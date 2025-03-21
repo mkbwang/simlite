@@ -1,20 +1,26 @@
 
-
+#' Sigmoid function
+#' @param y input vector
+#' @export
 expit <- function(y){
-  exp(y)/(1+exp(y))
+  1/(1+exp(-y))
 }
 
+#' Logit function
+#' @param y input vector with values between 0 and 1
+#' @export
 logit <- function(y){
   log(y / (1-y))
 }
 
-# log likelihoods
+
 
 #'sum of log likelihoods for a poisson distribution
 #'@param param a named vector with one element "loglambda"
 #'@param x vector of observed counts
 #'@return sum of log likelihoods
 #'@importFrom stats dpois
+#' @export
 logpois <- function(param, x){
   lambda <- exp(param["loglambda"])
   return(sum(dpois(x, lambda, log=T)))
@@ -25,6 +31,7 @@ logpois <- function(param, x){
 #'@param param a named vector two elements. One is the zero probability (logitpi0) and the other is the mean of nonzero part (loglambda)
 #'@param x vector of observed counts
 #'@importFrom stats dpois
+#' @export
 logzipois <- function(param, x){
   pi0 <- expit(param["logitpi0"])
   lambda <- exp(param["loglambda"])
@@ -41,6 +48,7 @@ logzipois <- function(param, x){
 #'@param param a named vector two elements. One is the shape parameter (logalpha) and the other is the scale (logbeta)
 #'@param x vector of observed counts
 #'@importFrom stats dgamma
+#' @export
 loggamma <- function(param, x){
   alpha <- exp(param["logshape"])
   beta <- exp(param["logscale"])
@@ -53,7 +61,7 @@ loggamma <- function(param, x){
 #'The other two are shape parameter (logalpha) and the other is the scale (logbeta)
 #'@param x vector of observed counts
 #'@importFrom stats dgamma
-#'
+#' @export
 logzigamma <- function(param, x){
 
   pi0 <- expit(param['logitpi0'])
@@ -72,6 +80,7 @@ logzigamma <- function(param, x){
 #' @param param a named vector with two elements. One is the mean (logmu) and the other is the size parameter (logsize)
 #' @param x vector of observed counts
 #' @importFrom stats dnbinom
+#' @export
 lognb <- function(param, x){
   mu <- exp(param["logmu"])
   size <- exp(param["logsize"])
@@ -84,6 +93,7 @@ lognb <- function(param, x){
 #' The other two are  the mean (logmu) and the size parameter (logsize) of negative binomial distribution.
 #' @param x vector of observed counts
 #' @importFrom stats dnbinom
+#' @export
 logzinb <- function(param, x){
 
   pi0 <- expit(param["logitpi0"])
@@ -103,6 +113,7 @@ logzinb <- function(param, x){
 #' @param param a named vector with three elements. The first one is the meanlog (logmu) and the other is the sdlog (logsigma)
 #' @param x vector of observed counts
 #' @importFrom stats dlnorm
+#' @export
 loglnorm <- function(param, x){
   mu <- param["mu"]
   sigma <- exp(param["logsigma"])
@@ -114,6 +125,7 @@ loglnorm <- function(param, x){
 #' @param param a named vector with three elements. The first one is the meanlog (mu) and the other is the sdlog (sigma)
 #' @param x vector of observed counts
 #' @importFrom stats dlnorm
+#' @export
 logzilnorm <- function(param, x){
   pi0 <- expit(param["logitpi0"])
   mu <- param["mu"]
@@ -268,7 +280,7 @@ mom2param <- function(moments, dist=c("pois", "gamma", "nb", "lnorm",
 #'@param x vector of observed values
 #'@param dist distribution. Can be chosen from pois, gamma, nb, lnorm, zipois, zigamma, zinb and zilnorm
 #'@param cutoff values larger than certain quantile are excluded from fitting the model, default 97%
-#'@importFrom stats optim var
+#'@importFrom stats optim var quantile
 #'@export
 fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
                                "zipois", "zigamma", "zinb", "zilnorm"),
@@ -337,7 +349,7 @@ fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
     observed_param <- mom2param(observed_mom, dist="nb")
     log_mu <- log(observed_param["mu"])
     log_size <- log(observed_param["size"])
-    t_observed_param <- c(mu, log_size)
+    t_observed_param <- c(log_mu, log_size)
     names(t_observed_param) <- c("logmu", "logsize")
     result <- optim(par=t_observed_param, fn=lognb, x=x, control=control, method="BFGS")
     fitted_param <- result$par
@@ -388,17 +400,26 @@ fitdistr <- function(x, dist=c("pois", "gamma", "nb", "lnorm",
 #' @param count_mat nfeatures*nsamples
 #' @param dist distribution name among "pois", "gamma", "nb", "lnorm", "zipois", "zigamma", "zinb", "zilnorm"
 #' @param cutoff values larger than certain quantile are excluded from fitting the model, default 97%
+#' @param ncores number of cores for parallel processing, by default 1
 #' @importFrom parallel detectCores makeCluster stopCluster clusterExport
+#' @importFrom parallelly availableCores
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach %dopar%
+#'
+#' @examples
+#' data("gut_experiment_subset")
+#' count_data <- SummarizedExperiment::assay(gut_experiment_subset)
+#' subset_genes <- sample(nrow(count_data), 30)
+#' subset_count_data <- round(count_data[subset_genes, ])
+#' pois_params <- fitdistr_mat(subset_count_data, dist="pois", ncores=4)
 #' @export
 fitdistr_mat <- function(count_mat, dist=c("pois", "gamma", "nb", "lnorm",
                                            "zipois", "zigamma", "zinb", "zilnorm"),
-                         cutoff=0.97){
+                         cutoff=0.97, ncores=1){
 
   dist <- match.arg(dist)
   nfeatures <- nrow(count_mat)
-  numCores <- detectCores() - 1
+  numCores <- min(availableCores(), ncores)
   cl <- makeCluster(numCores)
   registerDoParallel(cl)
   i <- 1

@@ -2,11 +2,16 @@
 title: "Simulate Synthetic Count Data"
 author: "Mukai Wang"
 date: "2025-03-19"
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulate Synthetic Count Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = FALSE, message=FALSE, echo=T) 
+knitr::opts_chunk$set(warning = FALSE, message=FALSE, echo=T)
+options(mc.cores = 4)
 ```
 
 
@@ -18,9 +23,10 @@ First load the example data from [Ascinar etal](https://doi.org/10.1038/s41591-0
 
 
 ```{r}
-library(SummarizedExperiment)
-data(gut_experiment_subset)
-count_data <- assay(gut_experiment_subset)
+library(simlite)
+data("gut_experiment_subset", package="simlite")
+print(dim(gut_experiment_subset))
+count_data <- SummarizedExperiment::assay(gut_experiment_subset)
 ```
 
 
@@ -41,6 +47,8 @@ There are many rare features which makes fitting distributions difficult. Let me
 count_data_normalized <- round(count_data_normalized)
 prevalences <- rowMeans(count_data_normalized > 0)
 subset_features <- which(prevalences > 0.5)
+# this step is used to make the vignette run faster
+subset_features <- sample(subset_features, 100)
 count_data_subset <- count_data_normalized[subset_features, ]
 ```
 
@@ -50,21 +58,21 @@ count_data_subset <- count_data_normalized[subset_features, ]
 Fit Poisson distribution.
 
 ```{r}
-pois_params <- fitdistr_mat(count_mat=count_data_subset, dist="pois", cutoff=0.97)
+pois_params <- fitdistr_mat(count_mat=count_data_subset, dist="pois", cutoff=0.97, ncores=4)
 head(pois_params)
 ```
 Fit zero-inflated Poisson distribution.
 
 
 ```{r}
-zipois_params <- fitdistr_mat(count_mat=count_data_subset, dist="zipois", cutoff=0.97)
+zipois_params <- fitdistr_mat(count_mat=count_data_subset, dist="zipois", cutoff=0.97, ncores=4)
 head(zipois_params)
 ```
 
 Fit negative binomial distribution.
 
 ```{r}
-nb_params <- fitdistr_mat(count_mat=count_data_subset, dist="nb", cutoff=0.97)
+nb_params <- fitdistr_mat(count_mat=count_data_subset, dist="nb", cutoff=0.97, ncores=4)
 head(nb_params)
 ```
 
@@ -74,7 +82,7 @@ Fit zero inflated negative binomial
 
 
 ```{r}
-zinb_params <- fitdistr_mat(count_mat=count_data_subset, dist="zinb", cutoff=0.97)
+zinb_params <- fitdistr_mat(count_mat=count_data_subset, dist="zinb", cutoff=0.97, ncores=4)
 head(zinb_params)
 ```
 
@@ -82,7 +90,7 @@ Fit zero-inflated Gamma distribution.
 
 
 ```{r}
-zigamma_params <- fitdistr_mat(count_mat=count_data_subset, dist="zigamma", cutoff=0.97)
+zigamma_params <- fitdistr_mat(count_mat=count_data_subset, dist="zigamma", cutoff=0.97, ncores=4)
 head(zigamma_params)
 ```
 
@@ -91,7 +99,7 @@ Fit zero-inflated lognormal distributions.
 
 
 ```{r}
-zilnorm_params <- fitdistr_mat(count_mat=count_data_subset, dist="zilnorm", cutoff=0.97)
+zilnorm_params <- fitdistr_mat(count_mat=count_data_subset, dist="zilnorm", cutoff=0.97, ncores=4)
 head(zilnorm_params)
 ```
 
@@ -118,13 +126,13 @@ pois_counts <- simcountmat(copula=copula, params=pois_params[1:nfeature, ,drop=F
 ```{r}
 
 zipois_counts <- simcountmat(copula=copula, params=zipois_params[1:nfeature, ,drop=F],
-                           dist="zipois")
+                           dist="zipois", ncores=4)
 
 nb_counts <- simcountmat(copula=copula, params=nb_params[1:nfeature, ,drop=F],
-                           dist="nb")
+                           dist="nb", ncores=4)
 
 zinb_counts <- simcountmat(copula=copula, params=zinb_params[1:nfeature, ,drop=F],
-                           dist="zinb")
+                           dist="zinb", ncores=4)
 
 ```
 
@@ -133,10 +141,10 @@ zinb_counts <- simcountmat(copula=copula, params=zinb_params[1:nfeature, ,drop=F
 ```{r}
 
 zigamma_counts <- simcountmat(copula=copula, params=zigamma_params[1:nfeature, ,drop=F],
-                           dist="zigamma")
+                           dist="zigamma", ncores=4)
 
 zilnorm_counts <- simcountmat(copula=copula, params=zilnorm_params[1:nfeature, ,drop=F],
-                           dist="zilnorm")
+                           dist="zilnorm", ncores=4)
 
 ```
 

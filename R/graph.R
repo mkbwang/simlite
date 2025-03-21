@@ -32,7 +32,8 @@ graph_setup <- function(dimension, sparseness=0.1){
 #'@param ubound upper bound of absolute nonzero value for off diagonal terms
 #'
 #'@importFrom RSpectra eigs_sym
-#'
+#'@importFrom stats runif
+#'@export
 prec_setup <- function(dimension, sparseness=0.1, cond=50,
                        lbound=1, ubound=2){
 
@@ -67,6 +68,9 @@ prec_setup <- function(dimension, sparseness=0.1, cond=50,
 #'
 #' @param invsigma a precision matrix that is symmetric and positive definite
 #' @param corr logical, whether to return a correlation matrix
+#'
+#' @importFrom stats cov2cor
+#' @export
 prec2cov <- function(invsigma, corr=FALSE){
 
   # use the fact that the matrix is positive definite
